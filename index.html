@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>台本 CSV 変換ツール</title>
+    <style>
+        :root {
+            --primary-color: #4f46e5;
+            --primary-hover: #4338ca;
+            --bg-color: #f3f4f6;
+            --card-bg: #ffffff;
+            --text-color: #1f2937;
+            --border-color: #e5e7eb;
+        }
+
+        body {
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            background-color: var(--card-bg);
+            border-radius: 12px;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            padding: 2rem;
+            width: 100%;
+            max-width: 800px;
+            box-sizing: border-box;
+        }
+
+        h1 {
+            text-align: center;
+            color: var(--primary-color);
+            margin-bottom: 1.5rem;
+            font-size: 1.8rem;
+        }
+
+        .description {
+            text-align: center;
+            margin-bottom: 2rem;
+            color: #6b7280;
+            font-size: 0.95rem;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 1.5rem;
+        }
+
+        @media (min-width: 768px) {
+            .grid {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        label {
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: #374151;
+        }
+
+        textarea {
+            width: 100%;
+            height: 300px;
+            padding: 0.75rem;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            resize: vertical;
+            font-family: monospace;
+            font-size: 0.9rem;
+            box-sizing: border-box;
+            transition: border-color 0.2s;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+        }
+
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+
+        button {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s, transform 0.1s;
+        }
+
+        button:hover {
+            background-color: var(--primary-hover);
+        }
+
+        button:active {
+            transform: translateY(1px);
+        }
+
+        button.secondary {
+            background-color: white;
+            color: var(--text-color);
+            border: 1px solid var(--border-color);
+        }
+
+        button.secondary:hover {
+            background-color: #f9fafb;
+        }
+
+        .status {
+            text-align: center;
+            margin-top: 1rem;
+            min-height: 1.5rem;
+            font-size: 0.9rem;
+        }
+
+        .success {
+            color: #059669;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>台本 CSV 変換くん</h1>
+    <p class="description">「名前,『セリフ』」の形式のテキストをCSVに変換します。<br>括弧を削除し、セリフの終わりで改行します。</p>
+
+    <div class="grid">
+        <div class="input-group">
+            <label for="input-text">入力テキスト</label>
+            <textarea id="input-text" placeholder="例：&#13;&#10;ずんだもん,「ボクは決めたのだ！」&#13;&#10;春日部つむぎ,「マジっすか？」"></textarea>
+        </div>
+        <div class="input-group">
+            <label for="output-text">CSV 出力結果</label>
+            <textarea id="output-text" readonly placeholder="変換結果がここに表示されます"></textarea>
+        </div>
+    </div>
+
+    <div class="controls">
+        <button id="convert-btn">変換する</button>
+        <button id="copy-btn" class="secondary">コピーする</button>
+        <button id="download-btn" class="secondary">CSV保存</button>
+    </div>
+    <div id="status-msg" class="status"></div>
+</div>
+
+<script>
+    const inputText = document.getElementById('input-text');
+    const outputText = document.getElementById('output-text');
+    const convertBtn = document.getElementById('convert-btn');
+    const copyBtn = document.getElementById('copy-btn');
+    const downloadBtn = document.getElementById('download-btn');
+    const statusMsg = document.getElementById('status-msg');
+
+    function showStatus(msg, type = 'success') {
+        statusMsg.textContent = msg;
+        statusMsg.className = 'status ' + type;
+        setTimeout(() => {
+            statusMsg.textContent = '';
+        }, 3000);
+    }
+
+    function convert() {
+        const raw = inputText.value;
+        if (!raw.trim()) {
+            outputText.value = "";
+            return;
+        }
+
+        // Processing logic
+        // 1. Split logic: The user says "insert newline at 」".
+        //    Also "remove 「".
+        //    Also "Format: Speaker,Message".
+        
+        // Strategy:
+        // Replace all instances of `」` with `」\n` first to ensuring splitting? 
+        // Or simply replace `」` with `\n` directly as requested.
+        // And remove `「`.
+        // Also ensure we handle the comma correctly if it's strictly `Speaker,「Message` -> `Speaker,Message`.
+
+        let converted = raw;
+
+        // Step 1: Replace closing bracket with newline
+        // Note: We might want to remove any existing newlines that are just for formatting in the original text 
+        // if the user pasted a long wrapping text, but let's stick to the specific instruction first.
+        // "」のような閉じ括弧が出たところで改行してほしい" -> Insert newline at closing bracket.
+        
+        // If the original text is clumped together like `A,「Msg」 B,「Msg」`,
+        // replacing `」` with `\n` will work: `A,「Msg\n B,「Msg\n`
+        
+        // Step 2: Remove opening bracket `「`
+        
+        converted = converted.replace(/」/g, "\n");
+        converted = converted.replace(/「/g, "");
+
+        // Cleanup:
+        // The user might have spaces between the previous closing bracket and the next name.
+        // e.g. `...Msg」 Speaker2...` -> becomes `...Msg\n Speaker2...`
+        // We might want to trim each line.
+
+        const lines = converted.split('\n');
+        const cleanLines = lines.map(line => line.trim()).filter(line => line.length > 0);
+        
+        // Rejoin
+        converted = cleanLines.join('\n');
+
+        outputText.value = converted;
+        showStatus('変換完了！');
+    }
+
+    convertBtn.addEventListener('click', convert);
+
+    copyBtn.addEventListener('click', () => {
+        outputText.select();
+        document.execCommand('copy');
+        showStatus('クリップボードにコピーしました');
+    });
+
+    downloadBtn.addEventListener('click', () => {
+        const content = outputText.value;
+        if (!content) return;
+        
+        // BOM for Excel compatibility (UTF-8)
+        const bom = new Uint8Array([0xEF, 0xBB, 0xBF]);
+        const blob = new Blob([bom, content], { type: 'text/csv' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'dialogue.csv';
+        a.click();
+        URL.revokeObjectURL(url);
+    });
+</script>
+</body>
+</html>
