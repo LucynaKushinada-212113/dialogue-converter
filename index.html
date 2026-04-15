@@ -1,60 +1,106 @@
 <!DOCTYPE html>
 <html lang="ja">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>台本 CSV 変換ツール</title>
+    <title>台本 CSV 変換ツール (v4.0)</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Noto+Sans+JP:wght@400;700&display=swap"
+        rel="stylesheet">
+
+    <!-- BudouX (ES Module) -->
+    <script type="module">
+        import { loadDefaultJapaneseParser } from 'https://unpkg.com/budoux@0.6.1/module/index.js';
+        window.parser = loadDefaultJapaneseParser();
+        console.log("BudouX parser loaded");
+    </script>
+
     <style>
         :root {
-            --primary-color: #4f46e5;
-            --primary-hover: #4338ca;
-            --bg-color: #f3f4f6;
-            --card-bg: #ffffff;
-            --text-color: #1f2937;
-            --border-color: #e5e7eb;
+            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --bg-gradient: linear-gradient(120deg, #a1c4fd 0%, #c2e9fb 100%);
+            --glass-bg: rgba(255, 255, 255, 0.7);
+            --glass-border: rgba(255, 255, 255, 0.5);
+            --text-main: #2d3748;
+            --text-muted: #718096;
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            --radius-xl: 1rem;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg-gradient: linear-gradient(120deg, #2d3748 0%, #1a202c 100%);
+                --glass-bg: rgba(26, 32, 44, 0.8);
+                --glass-border: rgba(255, 255, 255, 0.1);
+                --text-main: #e2e8f0;
+                --text-muted: #a0aec0;
+            }
         }
 
         body {
-            font-family: 'Helvetica Neue', Arial, sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-color);
-            line-height: 1.6;
+            font-family: 'Inter', 'Noto Sans JP', sans-serif;
+            background: var(--bg-gradient);
+            color: var(--text-main);
             margin: 0;
-            padding: 20px;
+            min-height: 100vh;
             display: flex;
             justify-content: center;
             align-items: center;
-            min-height: 100vh;
+            padding: 20px;
+            box-sizing: border-box;
         }
 
-        .container {
-            background-color: var(--card-bg);
-            border-radius: 12px;
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-            padding: 2rem;
+        .glass-container {
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-xl);
+            padding: 2.5rem;
             width: 100%;
-            max-width: 800px;
-            box-sizing: border-box;
+            max-width: 900px;
+            box-shadow: var(--shadow-lg);
+            animation: fadeIn 0.6s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
         h1 {
             text-align: center;
-            color: var(--primary-color);
-            margin-bottom: 1.5rem;
-            font-size: 1.8rem;
+            margin-bottom: 0.5rem;
+            font-weight: 700;
+            background: var(--primary-gradient);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-size: 2rem;
         }
 
-        .description {
+        p.description {
             text-align: center;
+            color: var(--text-muted);
             margin-bottom: 2rem;
-            color: #6b7280;
             font-size: 0.95rem;
         }
 
         .grid {
             display: grid;
             grid-template-columns: 1fr;
-            gap: 1.5rem;
+            gap: 2rem;
         }
 
         @media (min-width: 768px) {
@@ -66,192 +112,504 @@
         .input-group {
             display: flex;
             flex-direction: column;
+            gap: 0.5rem;
         }
 
         label {
             font-weight: 600;
-            margin-bottom: 0.5rem;
-            color: #374151;
+            font-size: 0.9rem;
+            color: var(--text-main);
+        }
+
+        .badge {
+            background: var(--primary-gradient);
+            color: white;
+            font-size: 0.7rem;
+            padding: 0.2rem 0.5rem;
+            border-radius: 999px;
+            margin-left: 0.5rem;
+            vertical-align: middle;
         }
 
         textarea {
             width: 100%;
-            height: 300px;
-            padding: 0.75rem;
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            resize: vertical;
+            height: 350px;
+            padding: 1rem;
+            border: 1px solid var(--glass-border);
+            border-radius: 0.75rem;
+            background: rgba(255, 255, 255, 0.5);
+            color: var(--text-main);
             font-family: monospace;
-            font-size: 0.9rem;
+            font-size: 0.95rem;
+            line-height: 1.6;
+            resize: vertical;
+            transition: all 0.2s;
             box-sizing: border-box;
-            transition: border-color 0.2s;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            textarea {
+                background: rgba(0, 0, 0, 0.2);
+                border-color: rgba(255, 255, 255, 0.1);
+            }
         }
 
         textarea:focus {
             outline: none;
-            border-color: var(--primary-color);
-            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.3);
+            background: rgba(255, 255, 255, 0.8);
+        }
+
+        @media (prefers-color-scheme: dark) {
+            textarea:focus {
+                background: rgba(0, 0, 0, 0.4);
+            }
         }
 
         .controls {
             display: flex;
             justify-content: center;
             gap: 1rem;
-            margin-top: 1.5rem;
+            margin-top: 2rem;
+            flex-wrap: wrap;
         }
 
         button {
-            background-color: var(--primary-color);
-            color: white;
+            padding: 0.8rem 1.8rem;
+            border-radius: 0.75rem;
             border: none;
-            padding: 0.75rem 1.5rem;
-            border-radius: 6px;
             font-weight: 600;
+            font-size: 1rem;
             cursor: pointer;
-            transition: background-color 0.2s, transform 0.1s;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
         }
 
-        button:hover {
-            background-color: var(--primary-hover);
+        button.primary {
+            background: var(--primary-gradient);
+            color: white;
+            box-shadow: 0 4px 6px -1px rgba(102, 126, 234, 0.4);
         }
 
-        button:active {
-            transform: translateY(1px);
+        button.primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 8px -1px rgba(102, 126, 234, 0.5);
+            filter: brightness(1.1);
         }
 
         button.secondary {
-            background-color: white;
-            color: var(--text-color);
-            border: 1px solid var(--border-color);
+            background: rgba(255, 255, 255, 0.8);
+            color: var(--text-main);
+            border: 1px solid var(--glass-border);
+        }
+
+        @media (prefers-color-scheme: dark) {
+            button.secondary {
+                background: rgba(255, 255, 255, 0.1);
+                color: var(--text-main);
+            }
         }
 
         button.secondary:hover {
-            background-color: #f9fafb;
+            background: rgba(255, 255, 255, 1);
+            transform: translateY(-2px);
+        }
+
+        @media (prefers-color-scheme: dark) {
+            button.secondary:hover {
+                background: rgba(255, 255, 255, 0.2);
+            }
+        }
+
+        button:active {
+            transform: translateY(0);
         }
 
         .status {
             text-align: center;
             margin-top: 1rem;
             min-height: 1.5rem;
-            font-size: 0.9rem;
+            font-weight: 600;
+            opacity: 0;
+            transition: opacity 0.3s;
         }
 
-        .success {
-            color: #059669;
+        .status.visible {
+            opacity: 1;
+        }
+
+        .status.success {
+            color: #10b981;
+        }
+
+        .status.error {
+            color: #ef4444;
+        }
+
+        /* Settings Panel */
+        .settings {
+            margin-bottom: 1.5rem;
+            padding: 1rem;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 0.75rem;
+            font-size: 0.9rem;
+            display: flex;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+            align-items: center;
+            border: 1px solid var(--glass-border);
+        }
+
+        @media (prefers-color-scheme: dark) {
+            .settings {
+                background: rgba(0, 0, 0, 0.2);
+            }
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            cursor: pointer;
+        }
+
+        input[type="checkbox"] {
+            accent-color: #667eea;
+            width: 1.1rem;
+            height: 1.1rem;
+        }
+
+        .helper-text {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-top: 0.25rem;
         }
     </style>
 </head>
+
 <body>
 
-<div class="container">
-    <h1>台本 CSV 変換くん</h1>
-    <p class="description">「名前,『セリフ』」の形式のテキストをCSVに変換します。<br>括弧を削除し、セリフの終わりで改行します。</p>
+    <div class="glass-container">
+        <h1>台本 CSV 変換くん <span style="font-size: 0.5em; vertical-align: middle; opacity: 0.7;">v4.0</span></h1>
+        <p class="description">台本テキストを解析し、25文字以内で自然に改行してYMM4用CSVを作成します。</p>
 
-    <div class="grid">
-        <div class="input-group">
-            <label for="input-text">入力テキスト</label>
-            <textarea id="input-text" placeholder="例：&#13;&#10;ずんだもん,「ボクは決めたのだ！」&#13;&#10;春日部つむぎ,「マジっすか？」"></textarea>
+        <div class="settings">
+            <label class="checkbox-group">
+                <input type="checkbox" id="use-budoux" checked>
+                <span>自動改行 (25文字制限)</span>
+            </label>
+            <label class="checkbox-group">
+                <input type="checkbox" id="remove-brackets" checked>
+                <span>括弧「」を除去</span>
+            </label>
+            <label class="checkbox-group">
+                <input type="checkbox" id="auto-convert" checked>
+                <span>リアルタイム変換</span>
+            </label>
         </div>
-        <div class="input-group">
-            <label for="output-text">CSV 出力結果</label>
-            <textarea id="output-text" readonly placeholder="変換結果がここに表示されます"></textarea>
+
+        <div class="grid">
+            <div class="input-group">
+                <label for="input-text">入力テキスト（台本）</label>
+                <textarea id="input-text" placeholder="例：
+ずんだもん,「ボクは決めたのだ！今日は一日中、美味しいずんだ餅を食べ続けるのだ！」
+春日部つむぎ,「マジっすか？そんなことしてたら太りますよ？」"></textarea>
+                <div class="helper-text">※ 名前とセリフの間は「,」または「:」などで区切ってください。</div>
+            </div>
+            <div class="input-group">
+                <label for="output-text">CSV 出力結果 <span class="badge">YMM4対応</span></label>
+                <textarea id="output-text" readonly placeholder="変換結果がここに表示されます"></textarea>
+                <div class="helper-text">※ セル内改行を含むCSV形式です。</div>
+            </div>
         </div>
+
+        <div class="controls">
+            <button id="convert-btn" class="primary" style="display: none;">変換する</button>
+            <!-- Hidden if auto-convert is on -->
+            <button id="copy-btn" class="secondary">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                </svg>
+                コピー
+            </button>
+            <button id="download-btn" class="primary">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                    <polyline points="7 10 12 15 17 10"></polyline>
+                    <line x1="12" y1="15" x2="12" y2="3"></line>
+                </svg>
+                CSV保存
+            </button>
+        </div>
+        <div id="status-msg" class="status"></div>
     </div>
 
-    <div class="controls">
-        <button id="convert-btn">変換する</button>
-        <button id="copy-btn" class="secondary">コピーする</button>
-        <button id="download-btn" class="secondary">CSV保存</button>
-    </div>
-    <div id="status-msg" class="status"></div>
-</div>
+    <script type="module">
+        // DOM Elements
+        const inputText = document.getElementById('input-text');
+        const outputText = document.getElementById('output-text');
+        const convertBtn = document.getElementById('convert-btn');
+        const copyBtn = document.getElementById('copy-btn');
+        const downloadBtn = document.getElementById('download-btn');
+        const statusMsg = document.getElementById('status-msg');
 
-<script>
-    const inputText = document.getElementById('input-text');
-    const outputText = document.getElementById('output-text');
-    const convertBtn = document.getElementById('convert-btn');
-    const copyBtn = document.getElementById('copy-btn');
-    const downloadBtn = document.getElementById('download-btn');
-    const statusMsg = document.getElementById('status-msg');
+        // Settings
+        const useBudouxCheckbox = document.getElementById('use-budoux');
+        const removeBracketsCheckbox = document.getElementById('remove-brackets');
+        const autoConvertCheckbox = document.getElementById('auto-convert');
 
-    function showStatus(msg, type = 'success') {
-        statusMsg.textContent = msg;
-        statusMsg.className = 'status ' + type;
-        setTimeout(() => {
-            statusMsg.textContent = '';
-        }, 3000);
-    }
+        // State
+        let debounceTimer;
 
-    function convert() {
-        const raw = inputText.value;
-        if (!raw.trim()) {
-            outputText.value = "";
-            return;
+        function showStatus(msg, type = 'success') {
+            statusMsg.textContent = msg;
+            statusMsg.className = 'status ' + type + ' visible';
+            setTimeout(() => {
+                statusMsg.className = 'status ' + type; // remove visible
+            }, 3000);
         }
 
-        // Processing logic
-        // 1. Split logic: The user says "insert newline at 」".
-        //    Also "remove 「".
-        //    Also "Format: Speaker,Message".
-        
-        // Strategy:
-        // Replace all instances of `」` with `」\n` first to ensuring splitting? 
-        // Or simply replace `」` with `\n` directly as requested.
-        // And remove `「`.
-        // Also ensure we handle the comma correctly if it's strictly `Speaker,「Message` -> `Speaker,Message`.
+        // Core Conversion Logic
+        function processLine(line) {
+            if (!line.trim()) return null;
 
-        let converted = raw;
+            // 1. Identify Speaker and Message
+            let speaker = "";
+            let message = "";
 
-        // Step 1: Replace closing bracket with newline
-        // Note: We might want to remove any existing newlines that are just for formatting in the original text 
-        // if the user pasted a long wrapping text, but let's stick to the specific instruction first.
-        // "」のような閉じ括弧が出たところで改行してほしい" -> Insert newline at closing bracket.
-        
-        // If the original text is clumped together like `A,「Msg」 B,「Msg」`,
-        // replacing `」` with `\n` will work: `A,「Msg\n B,「Msg\n`
-        
-        // Step 2: Remove opening bracket `「`
-        
-        converted = converted.replace(/」/g, "\n");
-        converted = converted.replace(/「/g, "");
+            const separators = [',', '，', ':', '：'];
+            let separatorIndex = -1;
 
-        // Cleanup:
-        // The user might have spaces between the previous closing bracket and the next name.
-        // e.g. `...Msg」 Speaker2...` -> becomes `...Msg\n Speaker2...`
-        // We might want to trim each line.
+            for (const sep of separators) {
+                const idx = line.indexOf(sep);
+                if (idx !== -1 && (separatorIndex === -1 || idx < separatorIndex)) {
+                    separatorIndex = idx;
+                }
+            }
 
-        const lines = converted.split('\n');
-        const cleanLines = lines.map(line => line.trim()).filter(line => line.length > 0);
-        
-        // Rejoin
-        converted = cleanLines.join('\n');
+            if (separatorIndex !== -1) {
+                speaker = line.substring(0, separatorIndex).trim();
+                message = line.substring(separatorIndex + 1).trim();
+            } else {
+                // Treat whole line as message if no speaker found
+                // Or try to detect bracket start
+                const bracketStart = line.search(/[「『"']/);
+                if (bracketStart > 0) {
+                    speaker = line.substring(0, bracketStart).trim();
+                    message = line.substring(bracketStart).trim();
+                } else {
+                    message = line.trim();
+                }
+            }
 
-        outputText.value = converted;
-        showStatus('変換完了！');
-    }
+            // 2. Remove Brackets
+            // Remove ALL occurrences of 「」 throughout the message
+            if (removeBracketsCheckbox.checked) {
+                message = message.replace(/[「」]/g, '');
+                // Also trim leading/trailing quotes and whitespace
+                message = message.replace(/^["'\s　]+/, '').replace(/["'\s　]+$/, '');
+            }
 
-    convertBtn.addEventListener('click', convert);
+            // 3. Apply BudouX + Max Length Logic if requested
+            if (useBudouxCheckbox.checked && window.parser) {
+                // --- YMM4タグ退避 ---
+                // <#ff0000>...</#> 等のタグを一時的に除去して文字数計算に含めない
+                const tagMap = [];
+                const PLACEHOLDER_CHAR = '\uFFFD'; // Unicode replacement character
+                let cleanMessage = message.replace(/<#[0-9a-fA-F]{6}>|<\/#>/g, (match, offset) => {
+                    tagMap.push({ offset, tag: match });
+                    return ''; // 解析用テキストからは除去
+                });
 
-    copyBtn.addEventListener('click', () => {
-        outputText.select();
-        document.execCommand('copy');
-        showStatus('クリップボードにコピーしました');
-    });
+                const segments = window.parser.parse(cleanMessage);
+                // 男性・女性は29文字、その他は25文字
+                const MAX_LENGTH = (speaker === '男性' || speaker === '女性') ? 29 : 25;
+                const PUNCTUATION_END = /[。！、]$/;
+                const KINSOKU_CHARS = /^[。、」』）！？ーぁぃぅぇぉっゃゅょァィゥェォッャュョ]/;
+                const fullText = segments.join('');
+                let resultLines = [];
 
-    downloadBtn.addEventListener('click', () => {
-        const content = outputText.value;
-        if (!content) return;
-        
-        // BOM for Excel compatibility (UTF-8)
-        const bom = new Uint8Array([0xEF, 0xBB, 0xBF]);
-        const blob = new Blob([bom, content], { type: 'text/csv' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'dialogue.csv';
-        a.click();
-        URL.revokeObjectURL(url);
-    });
-</script>
+                if (fullText.length <= MAX_LENGTH) {
+                    // 1行に収まる場合はそのまま
+                    resultLines = [fullText];
+                } else {
+                    // === 2行優先アルゴリズム ===
+                    // 句読点で分割して、両方が25文字以内に収まる分割点を探す
+                    let bestSplitIdx = -1;
+                    let cumLen = 0;
+
+                    for (let i = 0; i < segments.length - 1; i++) {
+                        cumLen += segments[i].length;
+                        const remainLen = fullText.length - cumLen;
+
+                        // 句読点で終わる文節を分割候補とする
+                        if (PUNCTUATION_END.test(segments[i])) {
+                            if (cumLen <= MAX_LENGTH && remainLen <= MAX_LENGTH) {
+                                bestSplitIdx = i;
+                                break; // 最初の有効な分割点を採用
+                            }
+                        }
+                    }
+
+                    // 句読点で良い分割点が見つからない場合、
+                    // 文節境界で2行に収まる分割点を探す
+                    if (bestSplitIdx === -1) {
+                        cumLen = 0;
+                        for (let i = 0; i < segments.length - 1; i++) {
+                            cumLen += segments[i].length;
+                            const remainLen = fullText.length - cumLen;
+                            if (cumLen <= MAX_LENGTH && remainLen <= MAX_LENGTH) {
+                                // 禁則処理: 次の文節先頭が禁則文字ならスキップ
+                                if (!KINSOKU_CHARS.test(segments[i + 1])) {
+                                    bestSplitIdx = i;
+                                }
+                            }
+                        }
+                    }
+
+                    if (bestSplitIdx >= 0) {
+                        // 2行で収まる
+                        const line1 = segments.slice(0, bestSplitIdx + 1).join('');
+                        const line2 = segments.slice(bestSplitIdx + 1).join('');
+                        resultLines = [line1, line2];
+                    } else {
+                        // 2行に収まらない場合: 改行しない（3行以上にはしない）
+                        resultLines = [fullText];
+                    }
+                }
+
+                // --- YMM4タグ復元 ---
+                // タグを元の位置に戻す（改行文字の挿入分を考慮）
+                let finalText = resultLines.join('\n');
+                if (tagMap.length > 0) {
+                    // タグ除去前のオリジナルからタグ位置を再計算して復元
+                    // シンプルな方法: 元のメッセージにあったタグをそのまま保持
+                    // cleanMessageベースで改行を入れた結果を、元のmessageに適用する
+                    let result = '';
+                    let cleanIdx = 0;
+                    let origIdx = 0;
+                    const origMsg = message;
+                    const cleanJoined = finalText;
+
+                    while (cleanIdx < cleanJoined.length || origIdx < origMsg.length) {
+                        // 元のメッセージでタグに該当する部分をスキップせずそのまま出力
+                        if (origIdx < origMsg.length && origMsg.slice(origIdx).match(/^(<#[0-9a-fA-F]{6}>|<\/#>)/)) {
+                            const tagMatch = origMsg.slice(origIdx).match(/^(<#[0-9a-fA-F]{6}>|<\/#>)/)[0];
+                            result += tagMatch;
+                            origIdx += tagMatch.length;
+                            continue;
+                        }
+                        if (cleanIdx < cleanJoined.length) {
+                            result += cleanJoined[cleanIdx];
+                            cleanIdx++;
+                            if (cleanJoined[cleanIdx - 1] !== '\n') {
+                                origIdx++;
+                            }
+                        } else {
+                            break;
+                        }
+                    }
+                    // 残りのタグを追加
+                    while (origIdx < origMsg.length) {
+                        if (origMsg.slice(origIdx).match(/^(<#[0-9a-fA-F]{6}>|<\/#>)/)) {
+                            const tagMatch = origMsg.slice(origIdx).match(/^(<#[0-9a-fA-F]{6}>|<\/#>)/)[0];
+                            result += tagMatch;
+                            origIdx += tagMatch.length;
+                        } else {
+                            origIdx++;
+                        }
+                    }
+                    message = result;
+                } else {
+                    message = finalText;
+                }
+            }
+
+            // 4. CSV整形: メッセージを常にダブルクォーテーションで囲む
+            message = '"' + message.replace(/"/g, '""') + '"';
+
+            const speakerMustQuote = speaker.includes('"') || speaker.includes(',') || speaker.includes('\n');
+            if (speakerMustQuote) {
+                speaker = '"' + speaker.replace(/"/g, '""') + '"';
+            }
+
+            return `${speaker},${message}`;
+        }
+
+        function doConvert() {
+            const raw = inputText.value;
+            // 」の後にスペース等が続く場合、改行として分割する（1行に複数エントリー対応）
+            const preprocessed = raw.replace(/」[ \t　]+/g, '」\n');
+            const lines = preprocessed.split(/\r?\n/);
+            const convertedLines = [];
+
+            for (const line of lines) {
+                // Skip empty lines
+                if (!line.trim()) continue;
+
+                const result = processLine(line);
+                if (result) {
+                    convertedLines.push(result);
+                }
+            }
+
+            outputText.value = convertedLines.join('\n');
+        }
+
+        // Event Listeners
+        inputText.addEventListener('input', () => {
+            if (autoConvertCheckbox.checked) {
+                clearTimeout(debounceTimer);
+                debounceTimer = setTimeout(doConvert, 300);
+            }
+        });
+
+        [useBudouxCheckbox, removeBracketsCheckbox, autoConvertCheckbox].forEach(el => {
+            el.addEventListener('change', () => {
+                if (el === autoConvertCheckbox) {
+                    convertBtn.style.display = autoConvertCheckbox.checked ? 'none' : 'inline-flex';
+                }
+                doConvert();
+            });
+        });
+
+        convertBtn.addEventListener('click', doConvert);
+        copyBtn.addEventListener('click', () => {
+            if (!outputText.value) return;
+            outputText.select();
+            document.execCommand('copy');
+            showStatus('コピーしました！');
+        });
+
+        downloadBtn.addEventListener('click', () => {
+            const content = outputText.value;
+            if (!content) {
+                showStatus('出力する内容がありません', 'error');
+                return;
+            }
+            const bom = new Uint8Array([0xEF, 0xBB, 0xBF]); // UTF-8 BOM
+            const blob = new Blob([bom, content], { type: 'text/csv' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'dialogue_ymm4.csv';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            showStatus('CSVを保存しました！');
+        });
+
+        // Initial check
+        setTimeout(doConvert, 500);
+
+    </script>
 </body>
+
 </html>
