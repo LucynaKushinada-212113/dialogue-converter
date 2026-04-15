@@ -428,8 +428,8 @@
                 });
 
                 const segments = window.parser.parse(cleanMessage);
-                // 男性・女性は29文字、その他は25文字
-                const MAX_LENGTH = (speaker === '男性' || speaker === '女性') ? 29 : 25;
+                // 男性・女性は28文字、その他は24文字
+                const MAX_LENGTH = (speaker === '男性' || speaker === '女性') ? 28 : 24;
                 const PUNCTUATION_END = /[。！、]$/;
                 const KINSOKU_CHARS = /^[。、」』）！？ーぁぃぅぇぉっゃゅょァィゥェォッャュョ]/;
                 const fullText = segments.join('');
