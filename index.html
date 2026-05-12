@@ -429,7 +429,7 @@
 
                 const segments = window.parser.parse(cleanMessage);
                 // 男性・女性は28文字、その他は24文字
-                const MAX_LENGTH = (speaker === '男性' || speaker === '女性') ? 28 : 24;
+                const MAX_LENGTH = (speaker === '男性' || speaker === '女性') ? 26 : 24;
                 const PUNCTUATION_END = /[。！、]$/;
                 const KINSOKU_CHARS = /^[。、」』）！？ーぁぃぅぇぉっゃゅょァィゥェォッャュョ]/;
                 const fullText = segments.join('');
@@ -439,26 +439,30 @@
                     // 1行に収まる場合はそのまま
                     resultLines = [fullText];
                 } else {
-                    // === 2行優先アルゴリズム ===
-                    // 句読点で分割して、両方が25文字以内に収まる分割点を探す
+                    // === 2行優先アルゴリズム（均等分割版） ===
+                    const halfLen = fullText.length / 2;
                     let bestSplitIdx = -1;
+                    let bestDiff = Infinity;
                     let cumLen = 0;
 
+                    // まず句読点で終わる分割候補から、最も均等なものを選ぶ
                     for (let i = 0; i < segments.length - 1; i++) {
                         cumLen += segments[i].length;
                         const remainLen = fullText.length - cumLen;
 
-                        // 句読点で終わる文節を分割候補とする
                         if (PUNCTUATION_END.test(segments[i])) {
                             if (cumLen <= MAX_LENGTH && remainLen <= MAX_LENGTH) {
-                                bestSplitIdx = i;
-                                break; // 最初の有効な分割点を採用
+                                const diff = Math.abs(cumLen - halfLen);
+                                if (diff < bestDiff) {
+                                    bestDiff = diff;
+                                    bestSplitIdx = i;
+                                }
                             }
                         }
                     }
 
                     // 句読点で良い分割点が見つからない場合、
-                    // 文節境界で2行に収まる分割点を探す
+                    // 文節境界で2行に収まる候補から最も均等なものを選ぶ
                     if (bestSplitIdx === -1) {
                         cumLen = 0;
                         for (let i = 0; i < segments.length - 1; i++) {
@@ -467,7 +471,11 @@
                             if (cumLen <= MAX_LENGTH && remainLen <= MAX_LENGTH) {
                                 // 禁則処理: 次の文節先頭が禁則文字ならスキップ
                                 if (!KINSOKU_CHARS.test(segments[i + 1])) {
-                                    bestSplitIdx = i;
+                                    const diff = Math.abs(cumLen - halfLen);
+                                    if (diff < bestDiff) {
+                                        bestDiff = diff;
+                                        bestSplitIdx = i;
+                                    }
                                 }
                             }
                         }
